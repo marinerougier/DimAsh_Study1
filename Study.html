@@ -1,0 +1,557 @@
+<!-- TO DO -->
+<!-- Preload images -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>exp</title>
+  <script src="jsPsych-6.1.0/jspsych.js"></script>
+  <script src="jsPsych-6.1.0/plugins/jspsych-fullscreen.js"></script>
+  <script src="jsPsych-6.1.0/plugins/jspsych-html-keyboard-response.js"></script>
+  <script src="jsPsych-6.1.0/plugins/jspsych-image-keyboard-response.js"></script>
+  <script src="jsPsych-6.1.0/plugins/jspsych-html-button-response.js"></script>
+  <script src="jsPsych-6.1.0/plugins/jspsych-survey-text.js"></script>
+  <script src="jsPsych-6.1.0/plugins/jspsych-survey-likert.js"></script>
+  <script src="jsPsych-6.1.0/plugins/jspsych-survey-multi-choice.js"></script>
+  <script src="js/jspsych-html-slider-response_required.js"></script>
+  <script src="jsPsych-6.1.0/plugins/jspsych-external-html.js"></script>
+  <script src="js/jquery.min.js"></script>
+  <script src="js/lodash.min.js"></script>
+  <script src="js/firebase.js"></script>
+  <link href="jsPsych-6.1.0/css/jspsych.css" rel="stylesheet" type="text/css">
+  <style>
+    body {
+      cursor: default;
+    }
+    #jspsych-html-slider-response-next {
+      margin: 0px;
+    }
+    .jspsych-content-wrapper {
+      width: 70%; 
+      height: 10000px;
+    }
+
+    .paringsImgs {
+      height: 150%;
+      margin: 0px;
+    }
+
+    .imgJudge {
+      position: fixed;
+      width: 15%; 
+      margin: 0px;
+      padding: 0px;
+      top: 0px;
+      left:41%;
+      z-index: 2;
+  }
+    .imgBack {
+      position: fixed;
+      width: 70%; 
+      margin: 0px;
+      padding: 0px;
+      top: 0px;
+      left:15%;
+      z-index: 2;
+  }
+    .imgInstr {
+      height: 200px; 
+  }
+
+    .imgitemMemo {
+      width: 50%; 
+  }
+    .displayInstr {
+      height: 130px;
+    }
+  </style>
+</head>
+<body></body>
+<script>
+
+  /* Parameters */
+  var numOfUS = 1; // number of US to be paired with each CS
+  var redirectToLink = "https://marinerougier.github.io/ECVAAST_RC/RCmarine_EC_VAAST.html"; // link to be redirected to at the end of the experiment
+  var FBdirectory = "vaastEC/EC" // Firebase directory in which to store the data
+
+  /* Initial variables */
+  var timeline = [];
+  var preloadimages = [];
+  var stims = [];
+
+  var jspsych_id = jsPsych.data.getURLVariable("id");
+  jspsych_id = jspsych_id == null ? jsPsych.randomization.randomID(15) : jspsych_id; // assign random id if not provided in URL
+  var prolificID = jsPsych.data.getURLVariable("PROLIFIC_PID");
+  if(prolificID == null) {prolificID = "999";}
+
+  // Variable coding whether participants are in the "cold" or "warm" condition
+   var cond_warmth = jsPsych.data.getURLVariable("cond_warmth");
+  if(cond_warmth == null) {cond_warmth = jsPsych.randomization.sampleWithoutReplacement(["warm", "cold"], 1)[0];}
+
+
+  /* EXPERIMENT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+  /* Fullscreen mode & Consent */
+    var activeFullscreen = {
+      message: "",
+      button_label: "To start the study, please switch to fullscreen",
+      type: 'fullscreen',
+      fullscreen_mode: true,
+      delay_after: 200,
+    };
+
+    // Consent
+    var check_consent = function(elem) {
+      if (document.getElementById('info').checked 
+        & document.getElementById('volunt').checked 
+        & document.getElementById('anony').checked 
+        & document.getElementById('end').checked 
+        & document.getElementById('consqc').checked 
+        & document.getElementById('summ').checked 
+        & document.getElementById('participate').checked ) {
+        return true;
+      }
+      else {
+        alert("If you wish to participate, you must check all the boxes.");
+        return false;
+      }
+      return false;
+    };
+
+
+    var consent = {
+      type:'external-html',
+      url: "https://marinerougier.github.io/Ugent_1/external_page_consent.html",
+      cont_btn: "start",
+      check_fn: check_consent
+    };
+
+  /* General INSTRUCTIONS */
+
+ var Instr_1 = {
+    type: "html-keyboard-response",
+    post_trial_gap: 300,
+    choices: [32],
+    stimulus: function() {
+      var html = "";
+      html += "<h1>Study on person perception</h1>";
+      html += "<p class='justify'>Psychological studies have shown that <b>people do form impressions of others "
+      html += "on the basis of very little information</b>. The purpose of the present study is to have a better understanding ";
+      html += "on <i>how</i> these impressions are formed and <i>when</i> they are accurate. </br> </br> ";
+      html += "<b>We will start by providing information about John</b>. Then, your task will be to ";
+      html += "<b>evaluate John on a series of 20 personality traits. </b><br><br>";
+      html += "<p></br>Press <span class='light-keys'><kbd>space</kbd></span> to continue</p>";
+      return html;
+    },
+  };
+
+ var Instr_2_warm = {
+    type: "html-keyboard-response",
+    post_trial_gap: 300,
+    choices: [32],
+    stimulus: function() {
+      var html = "";
+      html += "<h1>Study on person perception</h1>";
+      html += "<p class='justify'>Here is some information about John: <br>";
+      html += "John is <b>intelligent, skillful, industrious, warm, determined, practical, and cautious.</b><br><br> ";
+      html += "Please <b>read carefully</b> and try to keep in mind this information.<br><br>";
+      html += "<p></br>Press <span class='light-keys'><kbd>space</kbd></span> to continue</p>";
+      return html;
+    },
+  };
+
+var Instr_2_cold = {
+    type: "html-keyboard-response",
+    post_trial_gap: 300,
+    choices: [32],
+    stimulus: function() {
+      var html = "";
+      html += "<h1>tudy on person perception</h1>";
+      html += "<p class='justify'>Now we will provide you some information about John: ";
+      html += "John is <b>intelligent, skillful, industrious, cold, determined, practical, and cautious.</b><br><br> ";
+      html += "Please <b>read carefully</b> and try to keep in mind this information.<br><br>";
+      html += "<p></br>Press <span class='light-keys'><kbd>space</kbd></span> to continue</p>";
+      return html;
+    },
+  };
+
+var Instr_3 = {
+    type: "html-keyboard-response",
+    post_trial_gap: 300,
+    choices: [32],
+    stimulus: function() {
+      var html = "";
+      html += "<h1>tudy on person perception</h1>";
+      html += "<p class='justify'>Now, your task is to <b>report several judgments on John. </b><br><br>";
+      html += "Given that this study is on person perception, we are not interested in your tact, politeness, or other ";
+      html += "factors that are usually important in everyday life situations. </br>";
+      html += "It is extremely important that you try to answer <b> as honestly and as spontaneously as possible.</b></br></br>";
+      html += "<p></br>Press <span class='light-keys'><kbd>space</kbd></span> to begin</p>";
+      return html;
+    },
+  };
+
+   // Judgments on the 4 facets of social judgment (from Barbedor et al., 2024)
+
+  //Ability
+  var scaleCapable = ["1</br>Not capable at all", "2", "3", "4", "5", "6", "7</br>Totally capable"];
+  var scaleCompetent = ["1</br>Not competent at all", "2", "3", "4", "5", "6", "7</br>Totally competent"];
+  var scaleIntelligent = ["1</br>Not intelligent at all", "2", "3", "4", "5", "6", "7</br>Totally intelligent"];
+  var scaleSkillful = ["1</br>Not skillful at all", "2", "3", "4", "5", "6", "7</br>Totally skillful"];
+  var scaleSmart = ["1</br>Not smart at all", "2", "3", "4", "5", "6", "7</br>Totally smart"];
+
+  //Assertiveness
+  var scaleAmbitious = ["1</br>Not ambitious at all", "2", "3", "4", "5", "6", "7</br>Totally ambitious"];
+  var scaleAssertive = ["1</br>Not assertive at all", "2", "3", "4", "5", "6", "7</br>Totally assertive"];
+  var scaleDecisive = ["1</br>Not decisive at all", "2", "3", "4", "5", "6", "7</br>Totally decisive"];
+  var scaleDetermined = ["1</br>Not determined at all", "2", "3", "4", "5", "6", "7</br>Totally determined"];
+  var scaleSelfAssured = ["1</br>Not self-assured at all", "2", "3", "4", "5", "6", "7</br>Totally self-assured"];
+
+  //Friendliness
+  var scaleAffectionate = ["1</br>Not affectionate at all", "2", "3", "4", "5", "6", "7</br>Totally affectionate"];
+  var scaleCaring = ["1</br>Not caring at all", "2", "3", "4", "5", "6", "7</br>Totally caring"];
+  var scaleFriendly = ["1</br>Not friendly at all", "2", "3", "4", "5", "6", "7</br>Totally friendly"];
+  var scaleSociable = ["1</br>Not sociable at all", "2", "3", "4", "5", "6", "7</br>Totally sociable"];
+  var scaleWarm = ["1</br>Not warm at all", "2", "3", "4", "5", "6", "7</br>Totally warm"];
+
+  //Morality
+  var scaleFair = ["1</br>Not fair at all", "2", "3", "4", "5", "6", "7</br>Totally fair"];
+  var scaleHonest = ["1</br>Not honest at all", "2", "3", "4", "5", "6", "7</br>Totally honest"];
+  var scaleMoral = ["1</br>Not moral at all", "2", "3", "4", "5", "6", "7</br>Totally moral"];
+  var scaleReliable = ["1</br>Not reliable at all", "2", "3", "4", "5", "6", "7</br>Totally reliable"];
+  var scaleTrustworthy = ["1</br>Not trustworthy at all", "2", "3", "4", "5", "6", "7</br>Totally trustworthy"];
+
+  var rating = {
+        type: 'survey-likert',
+        preamble: "Please evaluate John on each of the following traits: <br><br>",
+        questions: [
+          {prompt: "", labels: scaleCapable, required: true},
+          {prompt: "", labels: scaleCompetent, required: true},
+          {prompt: "", labels: scaleIntelligent, required: true},
+          {prompt: "", labels: scaleSkillful, required: true},
+          {prompt: "", labels: scaleSmart, required: true},
+          {prompt: "", labels: scaleAmbitious, required: true},
+          {prompt: "", labels: scaleAssertive, required: true},
+          {prompt: "", labels: scaleDecisive, required: true},
+          {prompt: "", labels: scaleDetermined, required: true},
+          {prompt: "", labels: scaleSelfAssured, required: true},
+          {prompt: "", labels: scaleAffectionate, required: true},
+          {prompt: "", labels: scaleCaring, required: true},
+          {prompt: "", labels: scaleFriendly, required: true},
+          {prompt: "", labels: scaleSociable, required: true},
+          {prompt: "", labels: scaleWarm, required: true},
+          {prompt: "", labels: scaleFair, required: true},
+          {prompt: "", labels: scaleHonest, required: true},
+          {prompt: "", labels: scaleMoral, required: true},
+          {prompt: "", labels: scaleReliable, required: true},
+          {prompt: "", labels: scaleTrustworthy, required: true}
+        ],
+        randomize_question_order: true, 
+        button_label: 'Continue',
+        on_load: function() {
+          window.scrollTo(0, 0);
+          $(".jspsych-content").css("max-width", "100%");
+          $(".jspsych-content").css("margin-top", "150px");
+          $(".jspsych-survey-likert-statement").css("margin", "0px");
+          $(".jspsych-survey-likert-statement").css("padding", "0px");
+          $(".jspsych-survey-likert-opts").css("padding", "0 0 10px");
+          $("#jspsych-survey-likert-next").css("margin-top", "10px");
+          $("#jspsych-survey-likert-form").css("width", "800px");
+          $("li").css("width", "9%");
+        //   $("li:first-of-type").css("width", "110px");
+        //   $("li:last-of-type").css("width", "110px");
+        },
+        on_finish: function(data) {
+          data.task = "Johnrating";
+          var parsed_response  = JSON.parse(data.responses);
+          data.capable         = parsed_response.Q0;
+          data.competent       = parsed_response.Q1;
+          data.intelligent     = parsed_response.Q2;
+          data.skillful        = parsed_response.Q3;
+          data.smart           = parsed_response.Q4;
+          data.ambitious       = parsed_response.Q5;
+          data.assertive       = parsed_response.Q6;
+          data.decisive        = parsed_response.Q7;
+          data.determined      = parsed_response.Q8;
+          data.selfassured     = parsed_response.Q9;
+          data.affectionate    = parsed_response.Q10;
+          data.caring          = parsed_response.Q11;
+          data.friendly        = parsed_response.Q12;
+          data.sociable        = parsed_response.Q13;
+          data.warm            = parsed_response.Q14;
+          data.fair            = parsed_response.Q15;
+          data.honest          = parsed_response.Q16;
+          data.moral           = parsed_response.Q17;
+          data.reliable        = parsed_response.Q18;
+          data.trustworthy     = parsed_response.Q19;
+        },
+    };
+
+  var Instr_demo = {
+    type: "html-keyboard-response",
+    post_trial_gap: 300,
+    choices: [32],
+    stimulus: function() {
+      var html = "";
+      html += "<h1>tudy on person perception</h1>";
+      html += "<p class='justify'>Now, we will ask you to answer a few questions about yourself. </br></br>";
+      html += "<p></br>Press <span class='light-keys'><kbd>space</kbd></span> to begin</p>";
+      return html;
+    },
+      on_load: function() {
+          window.scrollTo(0, 0);
+          $(".jspsych-content").css("margin-top", "200px");
+          $(".jspsych-content").css("max-width", "90%");
+        },
+  };
+
+
+  var demand_awareness = {
+        timeline: [{
+            type: 'survey-text',
+            questions: [{ prompt: 'What do you think the researchers were trying to achieve in this study?', rows: 3, columns: 60 }],
+            button_label: "continue",
+        }],
+      on_load: function() {
+          window.scrollTo(0, 0);
+          $(".jspsych-content").css("margin-top", "200px");
+          $(".jspsych-content").css("max-width", "90%");
+        },
+        loop_function: function (data) {
+            var res = data.values()[0].responses;
+            var res = JSON.parse(res).Q0;
+            if (res == "") {
+                alert("Please answer the question");
+                return true;
+            }
+        },
+        on_finish: function (data) {
+            jsPsych.data.addProperties({
+                demand_awareness: JSON.parse(data.responses).Q0,
+            });
+        },
+    };
+
+
+  var demand_compliance = {
+      type: 'survey-multi-choice',
+      questions: [{prompt: "When we asked you to evaluate John, did you tell us the truth about what you think? Or did you just fake your response (i.e., tell us what you thought we wanted to hear)? Please be honest here (it will not affect payment in any way).", options: ['Yes - I faked my response based on what I thought the researchers wanted to find', 'No - my responses were based on how I genuinely felt', 'I do not know'], required: true}],
+      button_label: "Continue",
+      on_load: function() {
+          window.scrollTo(0, 0);
+          $(".jspsych-content").css("margin-top", "200px");
+          $(".jspsych-content").css("max-width", "90%");
+        },
+      on_finish: function(data) {
+          jsPsych.data.addProperties({
+              demand_compliance: JSON.parse(data.responses)["Q0"],
+          });
+      },
+  };
+
+ /* AGE */
+  var age = {
+      timeline: [{
+        type: 'survey-text',
+        questions: [{prompt: "How old are you?", rows: 1, columns: 10}],
+        button_label: "Continue",
+      }],
+      on_load: function() {
+          window.scrollTo(0, 0);
+          $(".jspsych-content").css("margin-top", "200px");
+          $(".jspsych-content").css("max-width", "90%");
+        },
+      loop_function: function(data){ 
+        var age = data.values()[0].responses;
+        var age = JSON.parse(age).Q0; 
+        if(age == ""){
+          alert("Please indicate your age"); 
+          return true; 
+        }
+      },
+      on_finish: function(data) {
+          jsPsych.data.addProperties({
+              age: JSON.parse(data.responses)["Q0"],
+          });
+      },
+  };
+
+  var gender = {
+      type: 'survey-multi-choice',
+      questions: [{prompt: "Please indicate your gender:", options: ['Male', 'Female', 'Other'], required: true}],
+      button_label: "Continue",
+      on_finish: function(data) {
+          jsPsych.data.addProperties({
+              gender: JSON.parse(data.responses)["Q0"],
+          });
+      },
+  };
+
+  var languageOptions = ['Native speaker', 'Very well', 'Well', 'Average', 'Badly', 'Very badly'];
+  var language = {
+        type: 'survey-multi-choice',
+        questions: [{ prompt: "How well do you speak english?", options: languageOptions, required: true }],
+        button_label: "continue",
+        on_finish: function (data) {
+            jsPsych.data.addProperties({
+                language: JSON.parse(data.responses).Q0,
+            });
+            console.log(data);
+        },
+    };
+
+  var Prolific_reported = {
+        timeline: [{
+            type: 'survey-text',
+            questions: [{ prompt: 'Please indicate your Prolific ID:', rows: 3, columns: 60 }],
+            button_label: "continue",
+        }],
+        loop_function: function (data) {
+            var res = data.values()[0].responses;
+            var res = JSON.parse(res).Q0;
+            if (res == "") {
+                alert("Please answer the question");
+                return true;
+            }
+        },
+        on_finish: function (data) {
+            jsPsych.data.addProperties({
+                Prolific_reported: JSON.parse(data.responses).Q0,
+            });
+        },
+    };
+
+  var comments = {
+        timeline: [{
+            type: 'survey-text',
+            questions: [{ prompt: 'Do you have comments regarding this study? [Optional]', rows: 3, columns: 60 }],
+            button_label: "continue",
+        }],
+        on_finish: function (data) {
+            jsPsych.data.addProperties({
+                Comment: JSON.parse(data.responses).Q0,
+            });
+        },
+    };
+
+ /* EXIT FULLSCREEN MODE */
+  var exitFullscreen = {
+    type: 'fullscreen',
+    fullscreen_mode: false
+  };
+
+    /* DEBRIEF */
+  var debrief = [];
+  debrief += "<h1>End of the study</h1>";
+  debrief += "<p class='justify'>Thank you for participating in this online experiment!<br><br>";
+  debrief += "In some experiments, we cannot tell people everything about the experiment at the beginning because their responses would not be ";
+  debrief += "natural. For example, if we told people what the point of the experiment was ahead of time, then some people might do whatever ";
+  debrief += "it is they think we want them to do, just to be helpful. Other people might do the exact opposite of what they think we want "; 
+  debrief += "them to do, just to show us that we cannot figure them out. When people are trying to second-guess what the experiment is "; 
+  debrief += "really about, and they behave a certain way because of it, our results gets messed up. That is because they are not behaving "; 
+  debrief += "like they naturally would in the real world. The whole point of this experiment is to find out how people would ";
+  debrief += "naturally behave.<br><br>";
+  debrief += "Now we would like to explain what we were trying to learn about with this study. First of all, you should know that the aim of "; 
+  debrief += "this study was not to investigate your perception accuracy. Perception accuracy is not a real ability. Instead, our "; 
+  debrief += "aim was to test whether your judgment of the three persons you saw depended on the physical attractiveness of the persons they were associated with. "; 
+  debrief += "Individuals tend to attribute many positive qualities to people that are said to be 'warm'. For instance, when a person is said to be warm, "; 
+  debrief += "people tend to think that s/he is also trustworthy.<br><br>";
+  debrief += "Our goal is to test if we can observe a similar effect on other, competence-related, traits (e.g., intelligence). ";
+  debrief += "We hope this explanation was clear. If you want additional information, if you have any questions, or if you would like ";
+  debrief += "to withdraw consent and have your data excluded, do not hesitate to contact us via Prolific Academic. If you are "; 
+  debrief += "interested, you can also ask for the results of this experiment—be aware, however, that this could take several weeks "; 
+  debrief += "to gather all the data we need and to analyze them. <br><br>";
+  debrief += "You can copy this code on Prolific: <b>763C2896</b> ";
+  debrief += "or you can click on the following link to validate your participation:</p>";
+  debrief += "<a href='https://app.prolific.co/submissions/complete?cc=763C2896' target='_blank'>click here</a><br><br>";
+
+
+  /* TIMELINES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+  timeline.push(consent);
+  timeline.push(activeFullscreen);
+
+switch(cond_warmth) {
+  case "warm":
+    timeline.push(Instr_1,
+				          Instr_2_warm,
+				          Instr_3,
+				          rating,
+				          Instr_demo,
+				          demand_awareness,
+				          demand_compliance,
+				          age,
+				          gender,
+				          language,
+				          Prolific_reported,
+				          comments,
+                  exitFullscreen);
+    break;
+  case "cold":
+    timeline.push(Instr_1,
+                  Instr_2_cold,
+                  Instr_3,
+                  rating,
+                  Instr_demo,
+                  demand_awareness,
+                  demand_compliance,
+                  age,
+                  gender,
+                  language,
+                  Prolific_reported,
+                  comments,
+                  exitFullscreen);
+    break;
+}
+
+  timeline = _.flattenDeep(timeline); // do not remove this!
+  preloadimages = _.flattenDeep(preloadimages);
+
+  /* INITIALISE EXP  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+  jsPsych.init({
+    timeline: timeline,
+    preload_images: preloadimages,
+    max_load_time: 500*1000,
+    exclusions: {
+     min_width: 1100,
+      min_height: 600,
+     max_width: 1600,
+     max_height: 900,
+    },
+    on_finish: function (data) {
+      $("#jspsych-content").html("<img src='https://i.gifer.com/4V0b.gif'>");
+
+
+      /* Initialize Firebase */
+      var config = {
+        apiKey: "AIzaSyAPTEPrT8V9T1-GouWXnW6jknK3brmagJs",
+        databaseURL: "https://postdocgent.firebaseio.com/"
+      };
+
+      firebase.initializeApp(config);
+      var database = firebase.database();
+
+      /* jsPsych: add data to every trial */
+      jsPsych.data.addProperties({
+        jspsych_id: jspsych_id,
+        prolificID: prolificID,
+        cond_warmth: cond_warmth,
+        totalTime: jsPsych.totalTime()
+      });
+
+      var datarating = data.filter({ task: 'Johnrating' }).csv();
+
+      /* Send data to Firebase */
+      database
+        .ref("Ash_Study1/" + jspsych_id + "/")
+        .update({ datarating })
+        .then(function () {
+              console.log("Data sent!");
+              $("#jspsych-content").html(debrief);
+              //setTimeout(jsPsych.data.displayData, 5000);
+                });
+    }
+  });
+</script>
+
+</html>
